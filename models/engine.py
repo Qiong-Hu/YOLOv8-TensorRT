@@ -59,6 +59,18 @@ class EngineBuilder:
 
         if with_profiling:
             config.profiling_verbosity = trt.ProfilingVerbosity.DETAILED
+
+        # for dynamic batch size (manually set min/opt/max batch size)
+        self.builder.max_batch_size = 16
+        profile = self.builder.create_optimization_profile()
+        profile.set_shape(
+            'images',
+            (1, 3, 640, 640),
+            (6, 3, 640, 640),
+            (16, 3, 640, 640),
+        )
+        config.add_optimization_profile(profile)
+
         with self.builder.build_engine(self.network, config) as engine:
             self.weight.write_bytes(engine.serialize())
         self.logger.log(

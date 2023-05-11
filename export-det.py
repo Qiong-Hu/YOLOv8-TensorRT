@@ -57,7 +57,6 @@ def parse_args():
 
 
 def main(args):
-    b = args.input_shape[0]
     YOLOv8 = YOLO(args.weights)
     model = YOLOv8.model.fuse().eval()
     for m in model.modules():
@@ -73,16 +72,37 @@ def main(args):
             model,
             fake_input,
             f,
+            dynamic_axes={
+                'images': {
+                    0: 'batch_size'
+                },
+                'num_dets': {
+                    0: 'batch_size'
+                },
+                'bboxes': {
+                    0: 'batch_size'
+                },
+                'scores': {
+                    0: 'batch_size'
+                },
+                'labels': {
+                    0: 'batch_size'
+                },
+            },
             opset_version=args.opset,
             input_names=['images'],
-            output_names=['num_dets', 'bboxes', 'scores', 'labels'])
+            output_names=['num_dets', 'bboxes', 'scores', 'labels'],
+            # verbose=True,
+        )
         f.seek(0)
         onnx_model = onnx.load(f)
     onnx.checker.check_model(onnx_model)
-    shapes = [b, 1, b, args.topk, 4, b, args.topk, b, args.topk]
+    shapes = [None, 1, None, args.topk, 4, None, args.topk, None, args.topk]
     for i in onnx_model.graph.output:
         for j in i.type.tensor_type.shape.dim:
-            j.dim_param = str(shapes.pop(0))
+            curr_shape = shapes.pop(0)
+            if curr_shape is not None:
+                j.dim_param = str(curr_shape)
     if args.sim:
         try:
             onnx_model, check = onnxsim.simplify(onnx_model)
