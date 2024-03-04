@@ -45,7 +45,7 @@ def main(args: argparse.Namespace) -> None:
             cls_id = int(label)
             cls = CLASSES[cls_id]
             color = COLORS[cls]
-            cv2.rectangle(draw, bbox[:2], bbox[2:], color, 2)
+            cv2.rectangle(draw, tuple(bbox[:2]), tuple(bbox[2:]), color, 2)
             cv2.putText(draw,
                         f'{cls}:{score:.3f}', (bbox[0], bbox[1] - 2),
                         cv2.FONT_HERSHEY_SIMPLEX,
